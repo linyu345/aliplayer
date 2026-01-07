@@ -1,130 +1,103 @@
-
 <!doctype html>
 <html lang="zh-CN">
 <head>
-  <meta charset="utf-8">
-  <meta http-equiv="x-ua-compatible" content="IE=edge" >
-  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no"/>
-  <title>Aliplay记忆播放器（点播） - 纯 HTML 版</title>
-
-  <!-- Aliplayer 样式（保持和原来一致） -->
-  <link rel="stylesheet" href="https://g.alicdn.com/de/prismplayer/2.9.3/skins/default/aliplayer-min.css" />
-
-  <!-- Aliplayer 脚本（保持原来版本） -->
-  <script type="text/javascript" charset="utf-8" src="https://g.alicdn.com/de/prismplayer/2.9.3/aliplayer-min.js"></script>
-  <script type="text/javascript" charset="utf-8" src="https://player.alicdn.com/aliplayer/presentation/js/aliplayercomponents.min.js"></script>
-
-  <style type="text/css">
-    /* 简单样式，和你原来的一致 */
-    html, body { width:100%; height:100%; background:#000; padding:0; margin:0; overflow:hidden; }
-    * { box-sizing: border-box; margin:0; padding:0; border:0; text-decoration:none; }
-    /* 提示文本样式 */
-    #noSourceMsg {
-      color: #fff;
-      font-family: Arial, "Microsoft Yahei", sans-serif;
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%,-50%);
-      text-align: center;
-      pointer-events: none;
-    }
-  </style>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no"/>
+    <title>Aliplay记忆播放器（点播） - 纯 HTML 版</title>
+    <!-- Aliplayer 样式 -->
+    <link rel="stylesheet" href="https://g.alicdn.com/de/prismplayer/2.9.3/skins/default/aliplayer-min.css" />
+    <!-- Aliplayer 脚本 -->
+    <script type="text/javascript" charset="utf-8" src="https://g.alicdn.com/de/prismplayer/2.9.3/aliplayer-min.js"></script>
+    <script type="text/javascript" charset="utf-8" src="https://player.alicdn.com/aliplayer/presentation/js/aliplayercomponents.min.js"></script>
+    <style type="text/css">
+        html, body {
+            width:100%;
+            height:100%;
+            background:#000;
+            padding:0;
+            margin:0;
+            overflow:hidden;
+        }
+        * {
+            box-sizing: border-box;
+            margin:0;
+            padding:0;
+            border:0;
+            text-decoration:none;
+        }
+        #noSourceMsg {
+            color: #fff;
+            font-family: Arial, "Microsoft Yahei", sans-serif;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%,-50%);
+            text-align: center;
+            pointer-events: none;
+        }
+    </style>
 </head>
 <body>
+    <div id="playerCnt" class="prism-player" style="width:100%;height:100%;"></div>
+    <div id="noSourceMsg" style="display:none;">
+        <div style="font-size:18px;margin-bottom:8px;">未检测到视频源</div>
+        <div style="font-size:13px;opacity:0.8;">请在地址栏添加 ?url= 视频地址（支持 http(s) 链接）</div>
+        <div style="font-size:12px;opacity:0.6;margin-top:10px;">示例： index.html?url=https%3A%2F%2Fexample.com%2Fvideo.mp4</div>
+    </div>
 
-  <!-- 播放器容器（Aliplayer 会把播放器实例挂载到这个元素） -->
-  <div id="playerCnt" class="prism-player" style="width:100%;height:100%;"></div>
+    <script type="text/javascript">
+        document.addEventListener('DOMContentLoaded', function () {
+            var params = new URLSearchParams(window.location.search);
+            var sourceParam = params.get('url') || '';
+            try {
+                sourceParam = decodeURIComponent(sourceParam);
+            } catch (e) {}
 
-  <!-- 当没有传入 url 参数时显示的提示 -->
-  <div id="noSourceMsg" style="display:none;">
-    <div style="font-size:18px;margin-bottom:8px;">未检测到视频源</div>
-    <div style="font-size:13px;opacity:0.8;">请在地址栏添加 ?url= 视频地址（支持 http(s) 链接）</div>
-    <div style="font-size:12px;opacity:0.6;margin-top:10px;">示例： index.html?url=https%3A%2F%2Fexample.com%2Fvideo.mp4</div>
-  </div>
+            var isValidSource = false;
+            if (sourceParam) {
+                var low = sourceParam.trim().toLowerCase();
+                if (low.startsWith('http://') || low.startsWith('https://')) {
+                    isValidSource = true;
+                }
+            }
 
-<script type="text/javascript">
-/*
-  纯前端获取 URL 参数的实现说明（全部用 JS，不依赖服务器端）：
-  - 使用 URLSearchParams 获取查询参数里的 url 字段
-  - 对值进行解码并做简单校验（非空）
-  - 如果没有 source，则不创建播放器并显示提示
-  安全提示（前端 XSS 注意）：
-  - 本示例直接把查询参数作为播放器 source 使用，若在真实项目中请确保该 URL 来自可信来源
-  - 若需要更严格的校验，可在此添加白名单或检查协议（只允许 http/https）
-*/
+            var noSourceMsg = document.getElementById('noSourceMsg');
+            if (!isValidSource) {
+                noSourceMsg.style.display = 'block';
+                document.getElementById('playerCnt').style.display = 'none';
+                return;
+            }
 
-document.addEventListener('DOMContentLoaded', function () {
-  // 获取查询参数 ?url=...
-  var params = new URLSearchParams(window.location.search);
-  var sourceParam = params.get('url') || '';
+            try {
+                var player = new Aliplayer({
+                    id: "playerCnt",
+                    source: sourceParam,
+                    width: "100%",
+                    height: "100%",
+                    autoplay: true,
+                    preload: true,
+                    rePlay: false,
+                    playsinline: false,
+                    useH5Prism: false,
+                    isLive: false,
+                    volume: 0,  // 默认静音
+                    components: [{
+                        name: 'MemoryPlayComponent',
+                        type: AliPlayerComponent.MemoryPlayComponent,
+                        args: [true]
+                    }]
+                }, function (player) {
+                    console.log("Aliplayer 已创建，source:", sourceParam);
+                    player.setVolume(0);  // 再次强制静音，确保生效
+                });
 
-  // 解码（防止页面传了 encodeURIComponent 的值）
-  try {
-    sourceParam = decodeURIComponent(sourceParam);
-  } catch (e) {
-    // decode 失败就保持原值
-  }
-
-  // 简单校验：必须以 http:// 或 https:// 开头（防止 file: 等不支持的协议）
-  var isValidSource = false;
-  if (sourceParam) {
-    var low = sourceParam.trim().toLowerCase();
-    if (low.startsWith('http://') || low.startsWith('https://')) {
-      isValidSource = true;
-    }
-  }
-
-  var noSourceMsg = document.getElementById('noSourceMsg');
-
-  if (!isValidSource) {
-    // 没有有效的 source，显示提示并退出（不创建播放器）
-    noSourceMsg.style.display = 'block';
-    // 如果你想在无 source 时隐藏播放器容器，可选择清空或隐藏它
-    document.getElementById('playerCnt').style.display = 'none';
-    return;
-  }
-
-var player = new Aliplayer({
-    id: "playerCnt",
-    source: sourceParam,
-    width: "100%",
-    height: "100%",
-    autoplay: true,
-    preload: true,
-    rePlay: false,
-    playsinline: false,
-    useH5Prism: false,
-    isLive: false,
-    volume: 0,  // 默认音量 0
-    components: [{
-        name: 'MemoryPlayComponent',
-        type: AliPlayerComponent.MemoryPlayComponent,
-        args: [true]
-    }]
-}, function (player) {
-    console.log("Aliplayer 已创建，source:", sourceParam);
-    player.setVolume(0);  // 再次强制静音
-});
-  
-    // 如果需要在父窗口里同步高度或其他属性，可以像原代码一样用 try/catch
-    try {
-      // 示例：若嵌入 iframe，可以尝试读取 parent.MacPlayer.Height
-      // document.getElementById('playerCnt').style.height = parent.MacPlayer.Height + 'px';
-    } catch (e) {
-      // 忽略错误
-    }
-
-  } catch (err) {
-    // 若播放器创建失败，显示错误提示
-    console.error('创建播放器时出错：', err);
-    noSourceMsg.style.display = 'block';
-    noSourceMsg.innerText = '播放器初始化失败，请检查控制台错误信息。';
-  }
-});
-</script>
-
+            } catch (err) {
+                console.error('创建播放器时出错：', err);
+                noSourceMsg.style.display = 'block';
+                noSourceMsg.innerText = '播放器初始化失败，请检查控制台错误信息。';
+            }
+        });
+    </script>
 </body>
 </html>
-
-
