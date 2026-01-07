@@ -96,7 +96,7 @@ var player = new Aliplayer({
     playsinline: false,
     useH5Prism: false,
     isLive: false,
-    volume: 0,  // 新增这一行：默认静音
+    volume: 0,  // 默认音量 0
     components: [{
         name: 'MemoryPlayComponent',
         type: AliPlayerComponent.MemoryPlayComponent,
@@ -104,6 +104,7 @@ var player = new Aliplayer({
     }]
 }, function (player) {
     console.log("Aliplayer 已创建，source:", sourceParam);
+    player.setVolume(0);  // 再次强制静音
 });
   
     // 如果需要在父窗口里同步高度或其他属性，可以像原代码一样用 try/catch
@@ -125,4 +126,5 @@ var player = new Aliplayer({
 
 </body>
 </html>
+
 
