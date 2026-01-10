@@ -1,95 +1,103 @@
-
-<!DOCTYPE html>
-<html lang="en">
-
+<!doctype html>
+<html lang="zh-CN">
 <head>
-    <title>M3U8/HLS Online Player - M3U8 Player</title>
-    <meta name="description"
-          content="M3U8Player is a Chrome browser extension tool that implements an HTTP Live Streaming (HLS) client. It allows you to play .m3u8 HTTP Live Streaming (HLS) content. It relies on HTML5 video and Media Source Extensions for playback. Its working principle involves converting MPEG-2 Transport Stream and AAC/MP3 streams into ISO BMFF (MP4) segments."/>
-
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <meta name="robots" content="noindex">
-
-    <link rel="canonical" href="https://ben.us.ci/player.html">
-
-    <script src="/js/jquery.min.js"></script>
-
-    <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
-
-
-    <link rel="stylesheet" href="https://cdn.staticfile.org/social-share.js/1.0.16/css/share.min.css">
-    <script src="https://cdn.staticfile.org/social-share.js/1.0.16/js/social-share.min.js"></script>
-
-    <link href="https://web.sdk.qcloud.com/player/tcplayer/release/v5.1.0/tcplayer.min.css" rel="stylesheet"/>
-    <script src="https://web.sdk.qcloud.com/player/tcplayer/release/v5.1.0/tcplayer.v5.1.0.min.js"></script>
-
-
-    <script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
-    <script>LA.init({id: "3G9QRCtAm0z4ABfe", ck: "3G9QRCtAm0z4ABfe"})</script>
-
- 
-
-
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-BRZ2D9XH84"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-BRZ2D9XH84');
-</script>
-
-
-<script data-grow-initializer="">!(function(){window.growMe||((window.growMe=function(e){window.growMe._.push(e);}),(window.growMe._=[]));var e=document.createElement("script");(e.type="text/javascript"),(e.src="https://faves.grow.me/main.js"),(e.defer=!0),e.setAttribute("data-grow-faves-site-id","U2l0ZTplMDAwNjNkYS02NmI1LTQ5NTUtODg1MC04Mzk2MDgzYTAxYmU=");var t=document.getElementsByTagName("script")[0];t.parentNode.insertBefore(e,t);})();</script>
-
-
-    <style>
-        html,
-        body {
-            width: 100%;
-            height: 100%;
-            display: block;
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no"/>
+    <title>Aliplay记忆播放器（点播） - 纯 HTML 版</title>
+    <!-- Aliplayer 样式 -->
+    <link rel="stylesheet" href="https://g.alicdn.com/de/prismplayer/2.9.3/skins/default/aliplayer-min.css" />
+    <!-- Aliplayer 脚本 -->
+    <script type="text/javascript" charset="utf-8" src="https://g.alicdn.com/de/prismplayer/2.9.3/aliplayer-min.js"></script>
+    <script type="text/javascript" charset="utf-8" src="https://player.alicdn.com/aliplayer/presentation/js/aliplayercomponents.min.js"></script>
+    <style type="text/css">
+        html, body {
+            width:100%;
+            height:100%;
+            background:#000;
+            padding:0;
+            margin:0;
+            overflow:hidden;
+        }
+        * {
+            box-sizing: border-box;
+            margin:0;
+            padding:0;
+            border:0;
+            text-decoration:none;
+        }
+        #noSourceMsg {
+            color: #fff;
+            font-family: Arial, "Microsoft Yahei", sans-serif;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%,-50%);
+            text-align: center;
+            pointer-events: none;
         }
     </style>
 </head>
-
 <body>
+    <div id="playerCnt" class="prism-player" style="width:100%;height:100%;"></div>
+    <div id="noSourceMsg" style="display:none;">
+        <div style="font-size:18px;margin-bottom:8px;">未检测到视频源</div>
+        <div style="font-size:13px;opacity:0.8;">请在地址栏添加 ?url= 视频地址（支持 http(s) 链接）</div>
+        <div style="font-size:12px;opacity:0.6;margin-top:10px;">示例： index.html?url=https%3A%2F%2Fexample.com%2Fvideo.mp4</div>
+    </div>
 
-<video id="player-container-id" preload="auto" playsinline webkit-playsinline style="width: 100%;height: 100%;">
-</video>
+    <script type="text/javascript">
+        document.addEventListener('DOMContentLoaded', function () {
+            var params = new URLSearchParams(window.location.search);
+            var sourceParam = params.get('url') || '';
+            try {
+                sourceParam = decodeURIComponent(sourceParam);
+            } catch (e) {}
 
+            var isValidSource = false;
+            if (sourceParam) {
+                var low = sourceParam.trim().toLowerCase();
+                if (low.startsWith('http://') || low.startsWith('https://')) {
+                    isValidSource = true;
+                }
+            }
 
+            var noSourceMsg = document.getElementById('noSourceMsg');
+            if (!isValidSource) {
+                noSourceMsg.style.display = 'block';
+                document.getElementById('playerCnt').style.display = 'none';
+                return;
+            }
 
+            try {
+                var player = new Aliplayer({
+                    id: "playerCnt",
+                    source: sourceParam,
+                    width: "100%",
+                    height: "100%",
+                    autoplay: true,
+                    preload: true,
+                    rePlay: false,
+                    playsinline: false,
+                    useH5Prism: false,
+                    isLive: false,
+                    volume: 0,  // 默认静音
+                    components: [{
+                        name: 'MemoryPlayComponent',
+                        type: AliPlayerComponent.MemoryPlayComponent,
+                        args: [true]
+                    }]
+                }, function (player) {
+                    console.log("Aliplayer 已创建，source:", sourceParam);
+                    player.setVolume(0);  // 再次强制静音，确保生效
+                });
 
-<script>
-    function getUrlParam(name) {
-        var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)"); //构造一个含有目标参数的正则表达式对象
-        var r = window.location.search.substr(1).match(reg);  //匹配目标参数
-        if (r != null) return unescape(r[2]);
-        return null; //返回参数值
-    }
-
-    let url = getUrlParam("url");
-    // url = 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8';
-    console.log(url)
-
-    var player = TCPlayer('player-container-id', {
-        sources: [{
-            src: url,
-        }],
-        licenseUrl: 'https://license.vod2.myqcloud.com/license/v2/1251321133_1/v_cube.license',
-    });
-
-    player.src(url); // url 播放地址
-</script>
-
-
-
-
+            } catch (err) {
+                console.error('创建播放器时出错：', err);
+                noSourceMsg.style.display = 'block';
+                noSourceMsg.innerText = '播放器初始化失败，请检查控制台错误信息。';
+            }
+        });
+    </script>
 </body>
-
 </html>
